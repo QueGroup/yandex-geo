@@ -24,18 +24,6 @@ or Poetry:
 poetry add yandex-geocoder
 ```
 
-**Asynchronous version:**
-
-```shell
-pip install "yandex-geocoder[async]"
-```
-
-or Poetry:
-
-```shell
-poetry add "yandex-geocoder[async]"
-```
-
 ## Usage example
 
 Yandex Geocoder requires an API developer key, you can get it [here](https://developer.tech.yandex.ru/services/) to use
@@ -63,15 +51,15 @@ assert address == "Россия, Москва, улица Льва Толсто�
 import asyncio
 from decimal import Decimal
 
-from yandex_geocoder import AsyncClient
+from yandex_geocoder import Client
 
 
 async def main():
-    aclient = AsyncClient(api_key="your-api-key")
+    aclient = Client(api_key="your-api-key")
 
-    coordinates = await aclient.coordinates("Москва Льва Толстого 16")
+    coordinates = await aclient.aiocoordinates("Москва Льва Толстого 16")
     assert coordinates == (Decimal("37.587093"), Decimal("55.733974"))
-    address = await aclient.address(Decimal("37.587093"), Decimal("55.733974"))
+    address = await aclient.aioaddress(Decimal("37.587093"), Decimal("55.733974"))
     assert address == "Россия, Москва, улица Льва Толстого, 16"
 
 
@@ -86,19 +74,19 @@ First of all you should install [Poetry](https://python-poetry.org).
 - install project dependencies
 
 ```bash
-make install
+just install
 ```
 
 - run linters
 
 ```bash
-make lint
+just lint
 ```
 
 - run tests
 
 ```bash
-make test
+just test
 ```
 
 - feel free to contribute!
