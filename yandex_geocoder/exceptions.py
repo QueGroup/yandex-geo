@@ -1,4 +1,9 @@
-__all__ = ["YandexGeocoderException", "UnexpectedResponse", "NothingFound", "InvalidKey"]
+__all__ = (
+    "YandexGeocoderException",
+    "UnexpectedResponse",
+    "NothingFound",
+    "InvalidKey",
+)
 
 
 class YandexGeocoderException(Exception):
