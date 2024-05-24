@@ -1,12 +1,18 @@
-__all__ = ["Client"]
-
 import dataclasses
+from decimal import (
+    Decimal,
+)
 import typing
-from decimal import Decimal
 
-import requests
+import httpx
 
-from .exceptions import InvalidKey, NothingFound, UnexpectedResponse
+from .exceptions import (
+    InvalidKey,
+    NothingFound,
+    UnexpectedResponse,
+)
+
+__all__ = ("Client",)
 
 
 @dataclasses.dataclass
@@ -30,19 +36,33 @@ class Client:
     api_key: str
 
     def _request(self, address: str) -> dict[str, typing.Any]:
-        response = requests.get(
-            "https://geocode-maps.yandex.ru/1.x/",
-            params=dict(format="json", apikey=self.api_key, geocode=address),
-        )
+        """Make a synchronous request to the Yandex Geocoder API."""
+        with httpx.Client() as client:
+            response = client.get(
+                "https://geocode-maps.yandex.ru/1.x/",
+                params={"format": "json", "apikey": self.api_key, "geocode": address},
+            )
+        return self.__handle_response(response)
 
+    async def _arequest(self, address: str) -> dict[str, typing.Any]:
+        """Make an asynchronous request to the Yandex Geocoder API."""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://geocode-maps.yandex.ru/1.x/",
+                params={"format": "json", "apikey": self.api_key, "geocode": address},
+            )
+        return self.__handle_response(response)
+
+    @staticmethod
+    def __handle_response(response: httpx.Response) -> dict[str, typing.Any]:
+        """Handle the API response."""
         if response.status_code == 200:
-            got: dict[str, typing.Any] = response.json()["response"]
-            return got
+            return response.json()["response"]
         elif response.status_code == 403:
-            raise InvalidKey()
+            raise InvalidKey("Invalid API key.")
         else:
             raise UnexpectedResponse(
-                f"status_code={response.status_code}, body={response.content!r}"
+                f"Unexpected response: status_code={response.status_code}, body={response.content!r}"
             )
 
     def coordinates(self, address: str) -> tuple[Decimal, ...]:
@@ -57,12 +77,39 @@ class Client:
 
         return Decimal(longitude), Decimal(latitude)
 
+    async def aiocoordinates(self, address: str) -> tuple[Decimal, ...]:
+        """Fetch coordinates (longitude, latitude) for passed address."""
+        d = await self._arequest(address)
+        data = d["GeoObjectCollection"]["featureMember"]
+
+        if not data:
+            raise NothingFound(f'Nothing found for "{address}" not found')
+
+        coordinates = data[0]["GeoObject"]["Point"]["pos"]
+        longitude, latitude = tuple(coordinates.split(" "))
+        return Decimal(longitude), Decimal(latitude)
+
     def address(self, longitude: Decimal, latitude: Decimal) -> str:
         """Fetch address for passed coordinates."""
-        data = self._request(f"{longitude},{latitude}")["GeoObjectCollection"]["featureMember"]
+        data = self._request(f"{longitude},{latitude}")["GeoObjectCollection"][
+            "featureMember"
+        ]
 
         if not data:
             raise NothingFound(f'Nothing found for "{longitude} {latitude}"')
 
         got: str = data[0]["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]["text"]
         return got
+
+    async def aioaddress(self, longitude: Decimal, latitude: Decimal) -> str:
+        """Fetch address for passed coordinates."""
+        response = await self._arequest(f"{longitude},{latitude}")
+        data = response.get("GeoObjectCollection", {}).get("featureMember", [])
+
+        if not data:
+            raise NothingFound(f'Nothing found for "{longitude} {latitude}"')
+
+        address_details: str = data[0]["GeoObject"]["metaDataProperty"][
+            "GeocoderMetaData"
+        ]["text"]
+        return address_details
