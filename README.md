@@ -15,13 +15,13 @@ Get address coordinates via Yandex geocoder
 Install it via `pip` tool:
 
 ```shell
-pip install yandex-geocoder
+pip install yandex-geo
 ```
 
 or Poetry:
 
 ```shell
-poetry add yandex-geocoder
+poetry add yandex-geo
 ```
 
 ## Usage example
