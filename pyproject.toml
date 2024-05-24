@@ -1,13 +1,16 @@
 [tool.poetry]
-name = "yandex-geocoder"
-version = "2.0.0"  # VERSION_ANCHOR
+name = "yandex-geo"
+version = "2.1.1"  # VERSION_ANCHOR
 description = "Simple library for getting address or coordinates via Yandex geocoder"
-authors = ["Nikita Sivakov <sivakov512@icloud.com>"]
+authors = [
+    "Nikita Sivakov <sivakov512@icloud.com>",
+    "David Dzhalaev <72649244+DavidRomanovizc@users.noreply.github.com>",
+]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "yandex_geocoder" }]
-homepage = "https://github.com/sivakov512/yandex-geocoder"
-repository = "https://github.com/sivakov512/yandex-geocoder"
+homepage = "https://github.com/QueGroup/yandex-geocoder"
+repository = "https://github.com/QueGroup/yandex-geocoder"
 
 [tool.poetry.dependencies]
 python = "^3.11"
