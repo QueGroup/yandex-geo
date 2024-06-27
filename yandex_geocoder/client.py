@@ -89,7 +89,12 @@ class Client:
         longitude, latitude = tuple(coordinates.split(" "))
         return Decimal(longitude), Decimal(latitude)
 
-    def address(self, longitude: Decimal, latitude: Decimal) -> str:
+    def address(
+        self,
+        longitude: Decimal,
+        latitude: Decimal,
+        level: typing.Literal["city", "region", "address"] = "address",
+    ) -> str | None:
         """Fetch address for passed coordinates."""
         data = self._request(f"{longitude},{latitude}")["GeoObjectCollection"][
             "featureMember"
@@ -98,10 +103,27 @@ class Client:
         if not data:
             raise NothingFound(f'Nothing found for "{longitude} {latitude}"')
 
-        got: str = data[0]["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]["text"]
-        return got
+        address_details = data[0]["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]
+        address = address_details["Address"]
+        components = address["Components"]
 
-    async def aioaddress(self, longitude: Decimal, latitude: Decimal) -> str:
+        handlers: dict[
+            typing.Literal["city", "region", "address"],
+            str | None,
+        ] = {
+            "city": self._city(components=components),
+            "region": self._region(components=components),
+            "address": self._address(address=address),
+        }
+
+        return handlers[level]
+
+    async def aioaddress(
+        self,
+        longitude: Decimal,
+        latitude: Decimal,
+        level: typing.Literal["city", "region", "address"] = "address",
+    ) -> str | None:
         """Fetch address for passed coordinates."""
         response = await self._arequest(f"{longitude},{latitude}")
         data = response.get("GeoObjectCollection", {}).get("featureMember", [])
@@ -109,7 +131,31 @@ class Client:
         if not data:
             raise NothingFound(f'Nothing found for "{longitude} {latitude}"')
 
-        address_details: str = data[0]["GeoObject"]["metaDataProperty"][
-            "GeocoderMetaData"
-        ]["text"]
-        return address_details
+        address_details = data[0]["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]
+        address = address_details["Address"]
+        components = address["Components"]
+
+        handlers: dict[
+            typing.Literal["city", "region", "address"],
+            str | None,
+        ] = {
+            "city": self._city(components=components),
+            "region": self._region(components=components),
+            "address": self._address(address=address),
+        }
+
+        return handlers[level]
+
+    @staticmethod
+    def _city(components: dict[typing.Any, typing.Any]) -> str | None:
+        return next(
+            (c["name"] for c in components if c["kind"] == "locality"), None
+        ) or next((c["name"] for c in components if c["kind"] == "province"), None)
+
+    @staticmethod
+    def _region(components: dict[typing.Any, typing.Any]) -> str | None:
+        return next((c["name"] for c in components if c["kind"] == "province"), None)
+
+    @staticmethod
+    def _address(address: dict[typing.Any, typing.Any]) -> str:
+        return address["formatted"]
