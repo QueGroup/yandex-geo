@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yandex-geo"
-version = "2.1.1"  # VERSION_ANCHOR
+version = "2.1.2"  # VERSION_ANCHOR
 description = "Simple library for getting address or coordinates via Yandex geocoder"
 authors = [
     "Nikita Sivakov <sivakov512@icloud.com>",
